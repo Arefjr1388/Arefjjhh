@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ارسال به ربات</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #16213e;
+            padding: 40px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 18px;
+            border: none;
+            border-radius: 10px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #e94560;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background: #c73652; }
+        #status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+        }
+        .success { display: block; background: #2ecc71; color: #fff; }
+        .error { display: block; background: #e74c3c; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🤖 ارسال پیام به ربات</h2>
+        <form id="form">
+            <input type="text" id="name" placeholder="نام شما" required>
+            <input type="email" id="email" placeholder="ایمیل (اختیاری)">
+            <textarea id="message" placeholder="متن پیام..." required></textarea>
+            <button type="submit">📤 ارسال</button>
+        </form>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // 🔐 توکن و Chat ID رو اینجا درست وارد کن:
+        const BOT_TOKEN = '8908534133:AAGkOvQPhIEKgUyzMTofeYqXEYekncYNUqE';
+        const CHAT_ID = '5420718316'
+
+        const form = document.getElementById('form');
+        const statusDiv = document.getElementById('status');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const message = document.getElementById('message').value.trim();
+
+            if (!name || !message) {
+                showStatus('لطفاً نام و پیام رو پر کن.', 'error');
+                return;
+            }
+
+            const btn = form.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = '⏳ در حال ارسال...';
+
+            const text = `📩 پیام جدید\n👤 نام: ${name}\n${email ? '📧 ایمیل: '+email+'\n' : ''}📝 پیام: ${message}`;
+
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showStatus('✅ ارسال شد!', 'success');
+                    form.reset();
+                } else {
+                    showStatus('❌ خطا: ' + (data.description || 'مشکل پیش اومد'), 'error');
+                }
+            } catch {
+                showStatus('❌ خطای شبکه!', 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = '📤 ارسال';
+        });
+
+        function showStatus(msg, type) {
+            statusDiv.className = type;
+            statusDiv.textContent = msg;
+            clearTimeout(window.t);
+            window.t = setTimeout(() => { statusDiv.className = ''; }, 5000);
+        }
+    </script>
+</body>
+</html>
